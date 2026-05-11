@@ -168,6 +168,43 @@ Four keyframes in `app.css`: `slide-in-right`, `slide-out-left`, `slide-in-left`
 
 ---
 
+## Screen Wake Lock
+
+Use the [Screen Wake Lock API](https://developer.mozilla.org/en-US/docs/Web/API/Screen_Wake_Lock_API) to prevent the device sleeping during an active exercise session.
+
+### `src/lib/wakeLock.ts` (new)
+
+```ts
+let wakeLock: WakeLockSentinel | null = null
+
+export async function acquireWakeLock(): Promise<void> {
+  if (!('wakeLock' in navigator)) return
+  try {
+    wakeLock = await navigator.wakeLock.request('screen')
+    // Re-acquire if released when tab becomes visible again
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+  } catch { /* silently ignore — not critical */ }
+}
+
+export async function releaseWakeLock(): Promise<void> {
+  document.removeEventListener('visibilitychange', handleVisibilityChange)
+  await wakeLock?.release()
+  wakeLock = null
+}
+
+async function handleVisibilityChange() {
+  if (document.visibilityState === 'visible') await acquireWakeLock()
+}
+```
+
+### Integration
+
+- `ExerciseDetailView`: call `acquireWakeLock()` when Start is clicked
+- Call `releaseWakeLock()` when the exercise ends or the user navigates back (via the back arrow or any other exit path)
+- The API is available in Chrome, Edge, and Safari 16.4+; the `'wakeLock' in navigator` guard makes it silently no-op elsewhere
+
+---
+
 ## Implementation Order
 
 1. **Clean slate + global styles** — delete scaffold, replace `app.css`, stub `App.svelte` to show dark background with title
@@ -181,7 +218,8 @@ Four keyframes in `app.css`: `slide-in-right`, `slide-out-left`, `slide-in-left`
 9. **PracticeView** — two instrument cards with last-practiced data
 10. **ExerciseListView** — sorted list, joined with registry
 11. **ExerciseDetailView** — static info + last session + stubbed Start button
-12. **Polish pass** — spacing, hover states, transition smoothness, DevTools DB verification
+12. **Wake lock** — `src/lib/wakeLock.ts`, wire acquire on Start and release on back/exit
+13. **Polish pass** — spacing, hover states, transition smoothness, DevTools DB verification
 
 ---
 
