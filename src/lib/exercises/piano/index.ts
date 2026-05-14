@@ -1,4 +1,5 @@
 import type { ExerciseDefinition } from '../registry'
+import MajorScalesExercise from './MajorScalesExercise.svelte'
 
 export const pianoExercises: ExerciseDefinition[] = [
   {
@@ -7,6 +8,7 @@ export const pianoExercises: ExerciseDefinition[] = [
     title: 'Major Scales',
     description: 'Practice all 12 major scales, ascending and descending, hands separately then together. Focus on even finger pressure and consistent tempo.',
     category: 'Scales',
+    component: MajorScalesExercise,
   },
   {
     id: 'piano-minor-scales',

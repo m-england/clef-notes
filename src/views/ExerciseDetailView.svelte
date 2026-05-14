@@ -4,6 +4,7 @@
   import { current, back } from '../stores/navigation.svelte'
   import { incrementPlayCount, getLastSession, openSession, closeSession } from '../stores/db.svelte'
   import { getExercise } from '../lib/exercises/registry'
+  import type { ExerciseComponentProps } from '../lib/exercises/registry'
   import { acquireWakeLock, releaseWakeLock } from '../lib/wakeLock'
   import type { SessionRecord } from '../lib/db/schema'
 
@@ -11,13 +12,21 @@
   const instrumentId = $derived(current().params.instrumentId as string)
   const def = $derived(getExercise(exerciseId))
 
+  const DEFAULT_BPM = 80
+
   let lastSession: SessionRecord | null = $state(null)
   let exerciseActive = $state(false)
   let activeSessionId: string | null = $state(null)
+  let bpm = $state(DEFAULT_BPM)
 
   $effect(() => {
     const id = exerciseId
-    getLastSession(id).then(s => { lastSession = s })
+    getLastSession(id).then(s => {
+      lastSession = s
+      if (typeof s?.results?.bpm === 'number') {
+        bpm = s.results.bpm
+      }
+    })
   })
 
   function formatDate(ts: number): string {
@@ -31,6 +40,16 @@
     activeSessionId = await openSession(exerciseId, instrumentId)
     await incrementPlayCount(exerciseId, instrumentId)
     await acquireWakeLock()
+  }
+
+  async function handleComplete(results: Record<string, unknown>) {
+    if (activeSessionId) {
+      await closeSession(activeSessionId, results)
+      activeSessionId = null
+    }
+    await releaseWakeLock()
+    exerciseActive = false
+    back()
   }
 
   async function handleBack() {
@@ -60,27 +79,54 @@
         <h1 class="title">{def.title}</h1>
       </div>
 
-      <p class="description">{def.description}</p>
+      {#if exerciseActive && def.component}
+        {@const ExerciseComponent = def.component}
+        <ExerciseComponent
+          sessionId={activeSessionId ?? ''}
+          {bpm}
+          onComplete={handleComplete}
+        />
+      {:else}
+        <p class="description">{def.description}</p>
 
-      <div class="last-session">
-        <h3 class="section-label">Last Session</h3>
-        {#if lastSession}
-          <div class="session-info">
-            <span class="session-date">{formatDate(lastSession.startedAt)}</span>
-            {#if lastSession.results}
-              <pre class="session-results">{JSON.stringify(lastSession.results, null, 2)}</pre>
-            {:else}
-              <span class="session-no-results">No results recorded.</span>
-            {/if}
+        {#if def.component}
+          <div class="tempo-control">
+            <div class="tempo-header">
+              <span class="section-label">Tempo</span>
+              <span class="bpm-value">{bpm} BPM</span>
+            </div>
+            <input
+              type="range"
+              class="bpm-slider"
+              min="40"
+              max="208"
+              step="1"
+              bind:value={bpm}
+            />
           </div>
-        {:else}
-          <p class="no-session">No previous sessions.</p>
         {/if}
-      </div>
 
-      <button class="btn btn-primary start-btn" onclick={handleStart}>
-        Start
-      </button>
+        <div class="last-session">
+          <h3 class="section-label">Last Session</h3>
+          {#if lastSession}
+            <div class="session-info">
+              <span class="session-date">{formatDate(lastSession.startedAt)}</span>
+              {#if lastSession.results?.totalSeconds != null}
+                <span class="session-duration">
+                  {Math.floor((lastSession.results.totalSeconds as number) / 60)}m {(lastSession.results.totalSeconds as number) % 60}s
+                  {#if lastSession.results.bpm != null}· {lastSession.results.bpm} BPM{/if}
+                </span>
+              {/if}
+            </div>
+          {:else}
+            <p class="no-session">No previous sessions.</p>
+          {/if}
+        </div>
+
+        <button class="btn btn-primary start-btn" onclick={handleStart}>
+          Start
+        </button>
+      {/if}
     {:else}
       <p style="color: var(--color-text-muted)">Exercise not found.</p>
     {/if}
@@ -177,6 +223,30 @@
     line-height: 1.7;
   }
 
+  .tempo-control {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+
+  .tempo-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+  }
+
+  .bpm-value {
+    font-size: var(--text-base);
+    font-weight: 700;
+    color: var(--color-accent);
+  }
+
+  .bpm-slider {
+    width: 100%;
+    accent-color: var(--color-accent);
+    cursor: pointer;
+  }
+
   .last-session {
     background: var(--color-surface);
     border: 1px solid var(--color-border);
@@ -207,18 +277,8 @@
     color: var(--color-text);
   }
 
-  .session-results {
-    font-size: var(--text-sm);
-    color: var(--color-text-muted);
-    background: var(--color-bg);
-    border-radius: 8px;
-    padding: var(--space-3);
-    overflow-x: auto;
-    font-family: monospace;
-  }
-
-  .session-no-results {
-    font-size: var(--text-sm);
+  .session-duration {
+    font-size: var(--text-base);
     color: var(--color-text-muted);
   }
 

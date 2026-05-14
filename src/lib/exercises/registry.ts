@@ -1,5 +1,12 @@
 import { pianoExercises } from './piano'
 import { voiceExercises } from './voice'
+import type { Component } from 'svelte'
+
+export interface ExerciseComponentProps {
+  sessionId: string
+  bpm: number
+  onComplete: (results: Record<string, unknown>) => void
+}
 
 export interface ExerciseDefinition {
   id: string
@@ -7,6 +14,7 @@ export interface ExerciseDefinition {
   title: string
   description: string
   category: string
+  component?: Component<ExerciseComponentProps>
 }
 
 export const ALL_EXERCISES: ExerciseDefinition[] = [
