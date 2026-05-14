@@ -65,25 +65,31 @@
   }
 </script>
 
-<div class="detail-view">
-  <button class="back-arrow-wrap" onclick={handleBack} aria-label="Go back">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-      <polyline points="15 18 9 12 15 6" />
-    </svg>
-  </button>
+<div class="detail-view" class:exercise-active={exerciseActive && def?.component}>
+  {#if !(exerciseActive && def?.component)}
+    <button class="back-arrow-wrap" onclick={handleBack} aria-label="Go back">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="15 18 9 12 15 6" />
+      </svg>
+    </button>
+  {/if}
 
   <div class="content">
     {#if def}
-      <div class="header">
-        <span class="category">{def.category}</span>
-        <h1 class="title">{def.title}</h1>
-      </div>
+      {#if !(exerciseActive && def.component)}
+        <div class="header">
+          <span class="category">{def.category}</span>
+          <h1 class="title">{def.title}</h1>
+        </div>
+      {/if}
 
       {#if exerciseActive && def.component}
         {@const ExerciseComponent = def.component}
         <ExerciseComponent
           sessionId={activeSessionId ?? ''}
           {bpm}
+          title={def.title}
+          onBack={handleBack}
           onComplete={handleComplete}
         />
       {:else}
@@ -147,6 +153,11 @@
     overflow-y: auto;
   }
 
+  .detail-view.exercise-active {
+    padding: 0;
+    overflow: hidden;
+  }
+
   /* Inline back arrow needed here to intercept wake lock release */
   .back-arrow-wrap {
     position: absolute;
@@ -180,6 +191,12 @@
   .back-arrow-wrap svg {
     width: 20px;
     height: 20px;
+  }
+
+  .exercise-active .content {
+    max-width: none;
+    padding: 0;
+    height: 100%;
   }
 
   .content {

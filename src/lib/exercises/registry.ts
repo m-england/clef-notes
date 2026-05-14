@@ -5,6 +5,8 @@ import type { Component } from 'svelte'
 export interface ExerciseComponentProps {
   sessionId: string
   bpm: number
+  title: string
+  onBack: () => void
   onComplete: (results: Record<string, unknown>) => void
 }
 
