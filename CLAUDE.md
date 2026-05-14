@@ -2,6 +2,10 @@
 
 Clef Notes is a vocal and piano practice app. It runs entirely in the browser with no backend — all data is stored in IndexedDB on the user's device.
 
+## Docs
+
+- [Feature backlog](.claude/docs/feature-backlog.md) — planned features with brief context on what each is meant to do
+
 ## Tech stack
 
 - **Svelte 5** with TypeScript (Vite, no SvelteKit)
