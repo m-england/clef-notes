@@ -5,8 +5,10 @@ import {
   incrementPlayCount as idbIncrementPlayCount,
   updateInstrumentLastPracticed as idbUpdateInstrumentLastPracticed,
   getLastSessionForExercise as idbGetLastSessionForExercise,
+  openSession as idbOpenSession,
+  closeSession as idbCloseSession,
 } from '../lib/db/idb'
-import type { InstrumentRecord, ExerciseRecord, SessionRecord } from '../lib/db/schema'
+import type { InstrumentRecord, ExerciseRecord, SessionRecord, SessionResults } from '../lib/db/schema'
 
 let db: IDBDatabase | null = $state(null)
 let instruments: InstrumentRecord[] = $state([])
@@ -55,4 +57,22 @@ export async function incrementPlayCount(exerciseId: string, instrumentId: strin
 export async function getLastSession(exerciseId: string): Promise<SessionRecord | null> {
   if (!db) return null
   return idbGetLastSessionForExercise(db, exerciseId)
+}
+
+export async function openSession(exerciseId: string, instrumentId: string): Promise<string | null> {
+  if (!db) return null
+  const session: SessionRecord = {
+    id: crypto.randomUUID(),
+    exerciseId,
+    instrumentId,
+    startedAt: Date.now(),
+    completedAt: null,
+    results: null,
+  }
+  return idbOpenSession(db, session)
+}
+
+export async function closeSession(sessionId: string, results: SessionResults | null = null): Promise<void> {
+  if (!db) return
+  await idbCloseSession(db, sessionId, Date.now(), results)
 }

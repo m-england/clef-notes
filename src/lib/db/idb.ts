@@ -1,4 +1,4 @@
-import type { InstrumentRecord, ExerciseRecord, SessionRecord } from './schema'
+import type { InstrumentRecord, ExerciseRecord, SessionRecord, SessionResults } from './schema'
 import { ALL_EXERCISES } from '../exercises/registry'
 
 const DB_NAME = 'clef-notes-db'
@@ -131,6 +131,34 @@ export function addSession(db: IDBDatabase, session: SessionRecord): Promise<voi
     const req = tx.objectStore('sessions').add(session)
     req.onsuccess = () => resolve()
     req.onerror = () => reject(req.error)
+  })
+}
+
+export async function openSession(db: IDBDatabase, session: SessionRecord): Promise<string> {
+  await addSession(db, session)
+  return session.id
+}
+
+export function closeSession(
+  db: IDBDatabase,
+  sessionId: string,
+  completedAt: number,
+  results: SessionResults | null
+): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction('sessions', 'readwrite')
+    const store = tx.objectStore('sessions')
+    const getReq = store.get(sessionId)
+    getReq.onsuccess = () => {
+      const record = getReq.result as SessionRecord
+      if (!record) { resolve(); return }
+      record.completedAt = completedAt
+      record.results = results
+      const putReq = store.put(record)
+      putReq.onsuccess = () => resolve()
+      putReq.onerror = () => reject(putReq.error)
+    }
+    getReq.onerror = () => reject(getReq.error)
   })
 }
 

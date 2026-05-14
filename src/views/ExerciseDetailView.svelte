@@ -2,7 +2,7 @@
   import { onMount } from 'svelte'
   import BackArrow from '../lib/ui/BackArrow.svelte'
   import { current, back } from '../stores/navigation.svelte'
-  import { incrementPlayCount, getLastSession } from '../stores/db.svelte'
+  import { incrementPlayCount, getLastSession, openSession, closeSession } from '../stores/db.svelte'
   import { getExercise } from '../lib/exercises/registry'
   import { acquireWakeLock, releaseWakeLock } from '../lib/wakeLock'
   import type { SessionRecord } from '../lib/db/schema'
@@ -13,6 +13,7 @@
 
   let lastSession: SessionRecord | null = $state(null)
   let exerciseActive = $state(false)
+  let activeSessionId: string | null = $state(null)
 
   $effect(() => {
     const id = exerciseId
@@ -27,13 +28,17 @@
 
   async function handleStart() {
     exerciseActive = true
+    activeSessionId = await openSession(exerciseId, instrumentId)
     await incrementPlayCount(exerciseId, instrumentId)
     await acquireWakeLock()
-    // Exercise logic goes here in the future
   }
 
   async function handleBack() {
     if (exerciseActive) {
+      if (activeSessionId) {
+        await closeSession(activeSessionId, null)
+        activeSessionId = null
+      }
       await releaseWakeLock()
       exerciseActive = false
     }
