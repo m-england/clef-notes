@@ -7,7 +7,9 @@
       "Bash(Remove-Item \"D:\\\\StompingGrounds\\\\clef-notes\\\\src\\\\assets\\\\hero.png\" -ErrorAction SilentlyContinue -Force)",
       "Bash(Write-Output \"Done\")",
       "PowerShell(New-Item *)",
-      "Bash(pnpm check *)"
+      "Bash(pnpm check *)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:0xfe.github.io)"
     ]
   }
 }
