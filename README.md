@@ -1,47 +1,80 @@
-# Svelte + TS + Vite
+# Clef Notes
 
-This template should help get you started developing with Svelte and TypeScript in Vite.
+A vocal and piano practice app with a video game menu aesthetic. Track your exercises, see your history, and keep a daily practice habit — all stored locally on your device with no account or backend required.
 
-## Recommended IDE Setup
+## Features
 
-[VS Code](https://code.visualstudio.com/) + [Svelte](https://marketplace.visualstudio.com/items?itemName=svelte.svelte-vscode).
+- **Piano and Voice** practice tracks, each with their own exercise list
+- Exercises sorted by most to least played so your frequent work is always at the top
+- Last session history shown before you start an exercise
+- Screen stays awake during practice (via the Web Screen Wake Lock API)
+- Fully offline — all data lives in IndexedDB on your device
 
-## Need an official Svelte framework?
+## Getting started
 
-Check out [SvelteKit](https://github.com/sveltejs/kit#readme), which is also powered by Vite. Deploy anywhere with its serverless-first approach and adapt to various platforms, with out of the box support for TypeScript, SCSS, and Less, and easily-added support for mdsvex, GraphQL, PostCSS, Tailwind CSS, and more.
+```bash
+pnpm install
+pnpm dev
+```
 
-## Technical considerations
+Open [http://localhost:5173](http://localhost:5173) in your browser.
 
-**Why use this over SvelteKit?**
+## Navigation
 
-- It brings its own routing solution which might not be preferable for some users.
-- It is first and foremost a framework that just happens to use Vite under the hood, not a Vite app.
+The app works like a game menu — no browser chrome, no nav bar, no footer.
 
-This template contains as little as possible to get started with Vite + TypeScript + Svelte, while taking into account the developer experience with regards to HMR and intellisense. It demonstrates capabilities on par with the other `create-vite` templates and is a good starting point for beginners dipping their toes into a Vite + Svelte project.
+```
+Home
+ ├── Practice
+ │    ├── Piano → exercise list → exercise detail → [exercise]
+ │    └── Voice → exercise list → exercise detail → [exercise]
+ ├── Stats
+ └── Settings
+```
 
-Should you later need the extended capabilities and extensibility provided by SvelteKit, the template has been structured similarly to SvelteKit so that it is easy to migrate.
+The back arrow in the top-left of every sub-screen returns you to the previous screen.
 
-**Why `global.d.ts` instead of `compilerOptions.types` inside `jsconfig.json` or `tsconfig.json`?**
+## Project structure
 
-Setting `compilerOptions.types` shuts out all other types not explicitly listed in the configuration. Using triple-slash references keeps the default TypeScript setting of accepting type information from the entire workspace, while also adding `svelte` and `vite/client` type information.
+```
+src/
+├── App.svelte                  # View orchestrator + slide transitions
+├── app.css                     # Global design system (tokens, resets, buttons, keyframes)
+├── main.ts                     # Entry point
+├── stores/
+│   ├── navigation.svelte.ts    # View stack — navigate() / back() / current()
+│   └── db.svelte.ts            # Reactive IndexedDB wrapper
+├── lib/
+│   ├── db/
+│   │   ├── schema.ts           # TypeScript types for DB records
+│   │   └── idb.ts              # Raw IndexedDB helpers and seed logic
+│   ├── exercises/
+│   │   ├── registry.ts         # Static exercise definitions
+│   │   ├── piano/index.ts      # Piano exercise list
+│   │   └── voice/index.ts      # Voice exercise list
+│   ├── ui/
+│   │   └── BackArrow.svelte    # Shared back button component
+│   └── wakeLock.ts             # Screen Wake Lock API wrapper
+└── views/
+    ├── HomeView.svelte
+    ├── PracticeView.svelte
+    ├── ExerciseListView.svelte
+    ├── ExerciseDetailView.svelte
+    ├── StatsView.svelte
+    └── SettingsView.svelte
+```
 
-**Why include `.vscode/extensions.json`?**
+## Tech
 
-Other templates indirectly recommend extensions via the README, but this file allows VS Code to prompt the user to install the recommended extension upon opening the project.
+- [Svelte 5](https://svelte.dev) + TypeScript
+- [Vite](https://vite.dev)
+- IndexedDB (via native browser API)
+- Pure CSS — no framework
 
-**Why enable `allowJs` in the TS template?**
+## Other commands
 
-While `allowJs: false` would indeed prevent the use of `.js` files in the project, it does not prevent the use of JavaScript syntax in `.svelte` files. In addition, it would force `checkJs: false`, bringing the worst of both worlds: not being able to guarantee the entire codebase is TypeScript, and also having worse typechecking for the existing JavaScript. In addition, there are valid use cases in which a mixed codebase may be relevant.
-
-**Why is HMR not preserving my local component state?**
-
-HMR state preservation comes with a number of gotchas! It has been disabled by default in both `svelte-hmr` and `@sveltejs/vite-plugin-svelte` due to its often surprising behavior. You can read the details [here](https://github.com/rixo/svelte-hmr#svelte-hmr).
-
-If you have state that's important to retain within a component, consider creating an external store which would not be replaced by HMR.
-
-```ts
-// store.ts
-// An extremely simple external store
-import { writable } from 'svelte/store'
-export default writable(0)
+```bash
+pnpm build      # Production build
+pnpm preview    # Preview production build locally
+pnpm check      # TypeScript + Svelte type checking
 ```
