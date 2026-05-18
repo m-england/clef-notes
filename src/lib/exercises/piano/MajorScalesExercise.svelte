@@ -142,7 +142,7 @@
   }
 
   .key-display {
-    font-size: var(--text-2xl);
+    font-size: var(--text-3xl);
     font-weight: 900;
     letter-spacing: -0.02em;
     color: var(--color-accent);
@@ -157,6 +157,7 @@
     overflow: hidden;
     display: flex;
     align-items: center;
+    justify-content: center;
   }
 
   .actions {

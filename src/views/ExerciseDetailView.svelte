@@ -66,25 +66,10 @@
 </script>
 
 <div class="detail-view" class:exercise-active={exerciseActive && def?.component}>
-  {#if !(exerciseActive && def?.component)}
-    <button class="back-arrow-wrap" onclick={handleBack} aria-label="Go back">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-        <polyline points="15 18 9 12 15 6" />
-      </svg>
-    </button>
-  {/if}
-
-  <div class="content">
-    {#if def}
-      {#if !(exerciseActive && def.component)}
-        <div class="header">
-          <span class="category">{def.category}</span>
-          <h1 class="title">{def.title}</h1>
-        </div>
-      {/if}
-
-      {#if exerciseActive && def.component}
-        {@const ExerciseComponent = def.component}
+  {#if exerciseActive && def?.component}
+    {#if def.component}
+      {@const ExerciseComponent = def.component}
+      <div class="content">
         <ExerciseComponent
           sessionId={activeSessionId ?? ''}
           {bpm}
@@ -92,7 +77,21 @@
           onBack={handleBack}
           onComplete={handleComplete}
         />
-      {:else}
+      </div>
+    {/if}
+  {:else}
+    <div class="content">
+      {#if def}
+        <div class="top-bar">
+          <button class="back-btn" onclick={handleBack} aria-label="Go back">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="15 18 9 12 15 6" />
+            </svg>
+          </button>
+          <span class="title">{def.title}</span>
+          <button class="btn btn-primary start-btn" onclick={handleStart}>Start</button>
+        </div>
+
         <p class="description">{def.description}</p>
 
         {#if def.component}
@@ -128,45 +127,54 @@
             <p class="no-session">No previous sessions.</p>
           {/if}
         </div>
-
-        <button class="btn btn-primary start-btn" onclick={handleStart}>
-          Start
-        </button>
+      {:else}
+        <p style="color: var(--color-text-muted)">Exercise not found.</p>
       {/if}
-    {:else}
-      <p style="color: var(--color-text-muted)">Exercise not found.</p>
-    {/if}
-  </div>
+    </div>
+  {/if}
 </div>
 
 <style>
   .detail-view {
-    position: relative;
     width: 100%;
     height: 100%;
     display: flex;
     align-items: flex-start;
     justify-content: center;
     background: var(--color-bg);
-    padding-top: var(--space-16);
-    padding-bottom: var(--space-8);
     overflow-y: auto;
   }
 
   .detail-view.exercise-active {
-    padding: 0;
     overflow: hidden;
   }
 
-  /* Inline back arrow needed here to intercept wake lock release */
-  .back-arrow-wrap {
-    position: absolute;
-    top: var(--space-5);
-    left: var(--space-5);
-    z-index: 10;
+  .content {
+    width: 100%;
+    max-width: 600px;
+    padding: var(--space-5) var(--space-5) var(--space-8);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-6);
+  }
+
+  .exercise-active .content {
+    max-width: none;
+    padding: 0;
+    height: 100%;
+  }
+
+  .top-bar {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+  }
+
+  .back-btn {
     display: flex;
     align-items: center;
     justify-content: center;
+    flex-shrink: 0;
     width: 44px;
     height: 44px;
     background: var(--color-surface-raised);
@@ -181,57 +189,25 @@
       transform var(--duration-fast) var(--ease-out-quart);
   }
 
-  .back-arrow-wrap:hover {
+  .back-btn:hover {
     color: var(--color-text);
     border-color: var(--color-accent);
     background: var(--color-surface);
     transform: translateX(-2px);
   }
 
-  .back-arrow-wrap svg {
+  .back-btn svg {
     width: 20px;
     height: 20px;
   }
 
-  .exercise-active .content {
-    max-width: none;
-    padding: 0;
-    height: 100%;
-  }
-
-  .content {
-    width: 100%;
-    max-width: 600px;
-    padding: 0 var(--space-6);
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-8);
-  }
-
-  .header {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-3);
-    align-items: flex-start;
-  }
-
-  .category {
-    font-size: var(--text-xs);
-    font-weight: 600;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: var(--color-accent);
-    background: var(--color-accent-dim);
-    padding: 2px var(--space-2);
-    border-radius: 4px;
-  }
-
   .title {
-    font-size: var(--text-3xl);
-    font-weight: 900;
-    letter-spacing: -0.02em;
+    flex: 1;
+    font-size: var(--text-lg);
+    font-weight: 800;
+    letter-spacing: -0.01em;
     color: var(--color-text);
-    line-height: 1.1;
+    line-height: 1.2;
   }
 
   .description {
@@ -305,8 +281,8 @@
   }
 
   .start-btn {
-    align-self: stretch;
-    padding: var(--space-5);
-    font-size: var(--text-xl);
+    flex-shrink: 0;
+    padding: var(--space-3) var(--space-5);
+    font-size: var(--text-base);
   }
 </style>

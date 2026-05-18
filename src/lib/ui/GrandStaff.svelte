@@ -6,12 +6,12 @@
 
   let container: HTMLDivElement = $state() as HTMLDivElement
 
-  const WIDTH = 560
-  const STAVE_WIDTH = 500
-  const STAVE_X = 10
+  const RENDER_WIDTH = 560
+  const RENDER_HEIGHT = 240
+  const STAVE_WIDTH = 540
+  const MARGIN_X = 10
   const TREBLE_Y = 20
   const BASS_Y = 130
-  const HEIGHT = 240
 
   function toVexKey(tonalNote: string): string {
     const match = tonalNote.match(/^([A-Ga-g][b#]?)(\d)$/)
@@ -32,14 +32,19 @@
     el.innerHTML = ''
 
     const renderer = new Renderer(el, Renderer.Backends.SVG)
-    renderer.resize(WIDTH, HEIGHT)
     const ctx = renderer.getContext()
 
-    const trebleStave = new Stave(STAVE_X, TREBLE_Y, STAVE_WIDTH)
+    // Set viewBox so CSS can scale the SVG up without distortion
+    const svg = el.querySelector('svg')!
+    svg.setAttribute('viewBox', `0 0 ${RENDER_WIDTH} ${RENDER_HEIGHT}`)
+    svg.setAttribute('width', '100%')
+    svg.removeAttribute('height')
+
+    const trebleStave = new Stave(MARGIN_X, TREBLE_Y, STAVE_WIDTH)
     trebleStave.addClef('treble').addKeySignature(key)
     trebleStave.setContext(ctx).draw()
 
-    const bassStave = new Stave(STAVE_X, BASS_Y, STAVE_WIDTH)
+    const bassStave = new Stave(MARGIN_X, BASS_Y, STAVE_WIDTH)
     bassStave.addClef('bass').addKeySignature(key)
     bassStave.setContext(ctx).draw()
 
@@ -63,7 +68,6 @@
     trebleVoice.draw(ctx, trebleStave)
     bassVoice.draw(ctx, bassStave)
 
-    // Beam in two groups of 4
     ;[trebleNotes, bassNotes].forEach(notes => {
       [notes.slice(0, 4), notes.slice(4)].forEach(group => {
         if (group.length > 1) new Beam(group).setContext(ctx).draw()
@@ -81,22 +85,13 @@
 
 <style>
   .staff-container {
-    width: 100%;
+    width: 90%;
     overflow-x: auto;
-    display: flex;
-    justify-content: center;
   }
 
   .staff-container :global(svg) {
     display: block;
-    max-width: 100%;
-  }
-
-  /* Override VexFlow's default black rendering for dark theme */
-  .staff-container :global(svg path),
-  .staff-container :global(svg rect),
-  .staff-container :global(svg text) {
-    fill: var(--color-text);
-    stroke: var(--color-text);
+    width: 100%;
+    height: auto;
   }
 </style>
