@@ -2,7 +2,7 @@ import type { InstrumentRecord, ExerciseRecord, SessionRecord, SessionResults } 
 import { ALL_EXERCISES } from '../exercises/registry'
 
 const DB_NAME = 'clef-notes-db'
-const DB_VERSION = 1
+const DB_VERSION = 2
 
 let dbInstance: IDBDatabase | null = null
 
@@ -14,42 +14,52 @@ export function openDB(): Promise<IDBDatabase> {
 
     request.onupgradeneeded = (event) => {
       const db = (event.target as IDBOpenDBRequest).result
+      const tx = request.transaction!
 
-      if (!db.objectStoreNames.contains('instruments')) {
+      if (event.oldVersion < 1) {
         db.createObjectStore('instruments', { keyPath: 'id' })
-      }
 
-      if (!db.objectStoreNames.contains('exercises')) {
         const exStore = db.createObjectStore('exercises', { keyPath: 'id' })
         exStore.createIndex('instrumentId', 'instrumentId', { unique: false })
-      }
 
-      if (!db.objectStoreNames.contains('sessions')) {
         const sesStore = db.createObjectStore('sessions', { keyPath: 'id' })
         sesStore.createIndex('exerciseId', 'exerciseId', { unique: false })
         sesStore.createIndex('instrumentId', 'instrumentId', { unique: false })
-      }
 
-      const tx = request.transaction!
-
-      const instrumentStore = tx.objectStore('instruments')
-      const instruments: InstrumentRecord[] = [
-        { id: 'piano', label: 'Piano', lastPracticedAt: null },
-        { id: 'voice', label: 'Voice', lastPracticedAt: null },
-      ]
-      for (const inst of instruments) {
-        instrumentStore.put(inst)
-      }
-
-      const exerciseStore = tx.objectStore('exercises')
-      for (const def of ALL_EXERCISES) {
-        const record: ExerciseRecord = {
-          id: def.id,
-          instrumentId: def.instrumentId,
-          playCount: 0,
-          lastPlayedAt: null,
+        const instrumentStore = tx.objectStore('instruments')
+        for (const inst of [
+          { id: 'piano', label: 'Piano', lastPracticedAt: null },
+          { id: 'voice', label: 'Voice', lastPracticedAt: null },
+        ] as InstrumentRecord[]) {
+          instrumentStore.put(inst)
         }
-        exerciseStore.put(record)
+
+        const exerciseStore = tx.objectStore('exercises')
+        for (const def of ALL_EXERCISES) {
+          exerciseStore.put({
+            id: def.id,
+            instrumentId: def.instrumentId,
+            playCount: 0,
+            lastPlayedAt: null,
+          } satisfies ExerciseRecord)
+        }
+      }
+
+      if (event.oldVersion < 2) {
+        const exerciseStore = tx.objectStore('exercises')
+        for (const def of ALL_EXERCISES) {
+          const getReq = exerciseStore.get(def.id)
+          getReq.onsuccess = () => {
+            if (!getReq.result) {
+              exerciseStore.put({
+                id: def.id,
+                instrumentId: def.instrumentId,
+                playCount: 0,
+                lastPlayedAt: null,
+              } satisfies ExerciseRecord)
+            }
+          }
+        }
       }
     }
 
